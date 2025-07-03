@@ -1,0 +1,79 @@
+using Lumina.Models;
+using Lumina.Repository;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Lumina API",
+        Version = "v1",
+        Description = "API for the Lumina mental wellness app",
+    });
+
+    // (Optional) If using JWT auth later, you can configure security schemes here
+});
+
+
+
+// Add ASP.NET Core Identity
+builder.Services.AddIdentity<User, IdentityRole>(options =>
+    {
+        // Optional: configure password complexity, lockout, etc.
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 6;
+    })
+    .AddEntityFrameworkStores<LuminaDbContext>()
+    .AddDefaultTokenProviders(); // needed for reset password, email confirm etc.
+
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.LoginPath = "/Identity/SignIn";
+    options.AccessDeniedPath = "/Identity/SignIn";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    options.SlidingExpiration = true;
+});
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<LuminaDbContext>(options =>
+{
+    options.UseSqlServer(connectionString);
+});
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Lumina API v1");
+        options.RoutePrefix = string.Empty; // Swagger UI at root `/`
+    });
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
