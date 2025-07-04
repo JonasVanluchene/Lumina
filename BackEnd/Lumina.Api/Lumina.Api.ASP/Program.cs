@@ -1,13 +1,14 @@
-using System.Text;
 using Lumina.Api.ASP.Infrastructure;
 using Lumina.Models;
 using Lumina.Repository;
 using Lumina.Services;
+using Lumina.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -113,6 +114,13 @@ builder.Services.AddDbContext<LuminaDbContext>(options =>
 
 //Services
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+
+//Automapper
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<Lumina.Services.Mapping.MappingProfile>();
+});
 
 var app = builder.Build();
 
@@ -125,6 +133,8 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Lumina API v1");
         options.RoutePrefix = string.Empty; // Swagger UI at root `/`
     });
+    await SeedData.SeedAsync(app.Services);
+
 }
 
 app.UseHttpsRedirection();
