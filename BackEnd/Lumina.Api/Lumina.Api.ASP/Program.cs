@@ -2,11 +2,13 @@ using System.Text;
 using Lumina.Api.ASP.Infrastructure;
 using Lumina.Models;
 using Lumina.Repository;
+using Lumina.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,14 +68,14 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     .AddDefaultTokenProviders(); // needed for reset password, email confirm etc.
 
 
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.LoginPath = "/Identity/SignIn";
-    options.AccessDeniedPath = "/Identity/SignIn";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
-    options.SlidingExpiration = true;
-});
+//builder.Services.ConfigureApplicationCookie(options =>
+//{
+//    options.Cookie.HttpOnly = true;
+//    options.LoginPath = "/Identity/SignIn";
+//    options.AccessDeniedPath = "/Identity/SignIn";
+//    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+//    options.SlidingExpiration = true;
+//});
 
 //Add jwt token bearer
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -99,6 +101,8 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+
+//Add db context with options
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<LuminaDbContext>(options =>

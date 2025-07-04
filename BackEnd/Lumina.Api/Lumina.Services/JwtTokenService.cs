@@ -2,9 +2,10 @@
 using System.Security.Claims;
 using System.Text;
 using Lumina.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Lumina.Api.ASP.Infrastructure
+namespace Lumina.Services
 {
     public class JwtTokenService
     {

@@ -1,5 +1,5 @@
 ﻿using Lumina.Api.ASP.DTO;
-using Lumina.Api.ASP.Infrastructure;
+using Lumina.Services;
 using Lumina.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
