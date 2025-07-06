@@ -15,5 +15,10 @@ namespace Lumina.DTO.JournalEntry
         public int MoodIntensity { get; set; }
         public string PrimaryMoodName { get; set; }
         public string? Weather { get; set; }
+
+        public int SleepHours { get; set; }
+
+        public List<string> Tags { get; set; } = new List<string>();
+        public List<string> SecondaryEmotions { get; set; } = new List<string>();
     }
 }

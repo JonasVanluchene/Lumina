@@ -36,6 +36,8 @@ namespace Lumina.Api.ASP.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(JournalEntryDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<JournalEntryDto>> CreateJournalEntry([FromBody] CreateJournalEntryDto model)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -43,11 +45,35 @@ namespace Lumina.Api.ASP.Controllers
             {
                 return Unauthorized();
             }
-            var journalEntry = await _journalEntryService.CreateAsync(model, userId);
-            return CreatedAtAction(
-                nameof(GetJournalEntryById),
-                new { id = journalEntry.Id },
-                journalEntry);
+            try
+            {
+                var journalEntry = await _journalEntryService.CreateAsync(model, userId);
+                return CreatedAtAction(nameof(GetJournalEntryById), new { id = journalEntry.Id }, journalEntry);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<JournalEntryDto>> UpdateJournalEntry(int id, [FromBody] UpdateJournalEntryDto model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized();
+
+            try
+            {
+                var updated = await _journalEntryService.UpdateAsync(id, model, userId);
+                if (updated == null)
+                    return NotFound();
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

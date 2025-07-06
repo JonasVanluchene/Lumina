@@ -15,6 +15,7 @@ namespace Lumina.Repository
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LuminaDbContext>();
 
+            // Seed Moods
             if (!context.Moods.Any())
             {
                 var moods = new List<Mood>
@@ -27,8 +28,40 @@ namespace Lumina.Repository
                 };
 
                 context.Moods.AddRange(moods);
-                await context.SaveChangesAsync();
             }
+
+            // Seed Tags
+            if (!context.Tags.Any())
+            {
+                var tags = new List<Tag>
+                {
+                    new Tag { Name = "Work" },
+                    new Tag { Name = "Family" },
+                    new Tag { Name = "Health" },
+                    new Tag { Name = "Study" },
+                    new Tag { Name = "Social" }
+                };
+
+                context.Tags.AddRange(tags);
+            }
+
+            // Seed Emotions
+            if (!context.Emotions.Any())
+            {
+                var emotions = new List<Emotion>
+                {
+                    new Emotion { Name = "Grateful", Category = "Positive", Icon = "🙏", IsActive = true },
+                    new Emotion { Name = "Excited", Category = "Positive", Icon = "🎉", IsActive = true },
+                    new Emotion { Name = "Lonely", Category = "Negative", Icon = "😞", IsActive = true },
+                    new Emotion { Name = "Stressed", Category = "Negative", Icon = "😫", IsActive = true },
+                    new Emotion { Name = "Content", Category = "Neutral", Icon = "😐", IsActive = true }
+                };
+
+                context.Emotions.AddRange(emotions);
+            }
+
+            await context.SaveChangesAsync();
         }
+
     }
 }

@@ -54,7 +54,7 @@ namespace Lumina.Api.ASP.Controllers
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded)
-                return Unauthorized("Invalid credentials");
+                return Unauthorized("Invalid credentials, wrong password");
 
             var token = _jwtTokenService.CreateToken(user);
             return Ok(new { Token = token });
