@@ -122,6 +122,7 @@ builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<Lumina.Services.Mapping.MappingProfile>();
+    cfg.AddProfile<Lumina.Api.ASP.Mapping.MappingProfile>();
 });
 
 var app = builder.Build();
