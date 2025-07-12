@@ -1,8 +1,6 @@
-﻿using Azure.Core;
-using Lumina.Api.ASP.DTO;
+﻿using Lumina.Api.ASP.DTO;
 using Lumina.Models;
 using Lumina.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
