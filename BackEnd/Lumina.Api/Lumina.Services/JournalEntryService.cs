@@ -52,7 +52,7 @@ namespace Lumina.Services
         {
             var journalEntry = _mapper.Map<JournalEntry>(dto);
             journalEntry.UserId = userId;
-            journalEntry.CreatedAt = DateTime.Now;
+            journalEntry.CreatedAt = DateTime.UtcNow;
 
             // Add Tags
             var tags = await _dbContext.Tags

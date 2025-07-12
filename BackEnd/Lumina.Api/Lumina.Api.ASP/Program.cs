@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Lumina.Api.ASP.DTO;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,7 +71,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     .AddEntityFrameworkStores<LuminaDbContext>()
     .AddDefaultTokenProviders(); // needed for reset password, email confirm etc.
 
-
+//TODO: Check if this is needed in a webapi
 //builder.Services.ConfigureApplicationCookie(options =>
 //{
 //    options.Cookie.HttpOnly = true;
@@ -80,6 +81,9 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 //    options.SlidingExpiration = true;
 //});
 
+
+//TODO:  add the OnChallenge event to existing JWT Bearer configuration (to display custom message on unauthenticated access) --> example code is commented
+//TODO: Refactor IssuerSigningKey = --> evade null reference warning
 //Add jwt token bearer
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSettings);
@@ -102,6 +106,25 @@ builder.Services.AddAuthentication(options =>
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
         };
+        //options.Events = new JwtBearerEvents
+        //{
+        //    OnChallenge = context =>
+        //    {
+        //        // Skip the default logic
+        //        context.HandleResponse();
+
+        //        context.Response.StatusCode = 401;
+        //        context.Response.ContentType = "application/json";
+
+        //        var errorResponse = new ErrorResponse()
+        //        {
+        //            Message = "Authentication failed",
+        //            Details = "User identity could not be verified from the authentication token"
+        //        };
+
+        //        return context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorResponse));
+        //    }
+        //};
     });
 
 
@@ -117,6 +140,7 @@ builder.Services.AddDbContext<LuminaDbContext>(options =>
 //Services
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+builder.Services.AddScoped<ITagService, TagService>();
 
 //Automapper
 builder.Services.AddAutoMapper(cfg =>
