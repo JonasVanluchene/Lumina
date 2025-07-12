@@ -28,7 +28,9 @@ namespace Lumina.Services.Mapping
             CreateMap<JournalEntry, JournalEntryDto>()
                 .ForMember(dest => dest.PrimaryMoodName, opt => opt.MapFrom(src => src.PrimaryMood.Name))
                 .ForMember(dest => dest.Tags, opt => opt.MapFrom(src =>
-                    src.Tags.Select(jt => jt.Tag.Name).ToList()))
+                    src.Tags.Where(jt => jt.Tag != null).Select(jt => jt.Tag.Name).ToList()))
+                .ForMember(dest => dest.UserTags, opt => opt.MapFrom(src =>
+                    src.Tags.Where(jt => jt.UserTag != null).Select(jt => jt.UserTag.Name).ToList()))
                 .ForMember(dest => dest.SecondaryEmotions, opt => opt.MapFrom(src =>
                     src.SecondaryEmotions.Select(js => js.Emotion.Name).ToList()));
 

@@ -14,6 +14,8 @@ namespace Lumina.DTO.JournalEntry
         public int? SleepHours { get; set; }
 
         public List<int> TagIds { get; set; } = new();
+        public List<int> UserTagIds { get; set; } = new();
+        public List<string> NewUserTagNames { get; set; } = new();
         public List<int> SecondaryEmotionIds { get; set; } = new();
     }
 }
