@@ -1,6 +1,5 @@
 ﻿using Lumina.Api.ASP.DTO;
 using Lumina.Api.ASP.helpers;
-using Lumina.DTO.JournalEntry;
 using Lumina.DTO.Tag;
 using Lumina.Services;
 using Lumina.Services.Interfaces;
@@ -78,7 +77,7 @@ namespace Lumina.Api.ASP.Controllers
                     });
                 }
 
-                var tags = await _tagService.GetUserTagsAsync(userId);
+                var tags = await _tagService.GetAllUserTagsAsync(userId);
                 return Ok(tags);
             }
             catch (Exception ex)
@@ -108,7 +107,7 @@ namespace Lumina.Api.ASP.Controllers
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<JournalEntryDto>> CreateUserTag([FromBody] CreateUserTagDto model)
+        public async Task<ActionResult<UserTagDto>> CreateUserTag([FromBody] CreateUserTagDto model)
         {
             try
             {
@@ -147,6 +146,78 @@ namespace Lumina.Api.ASP.Controllers
                     new ErrorResponse { Message = "An error occurred while creating the user tag" });
             }
         }
+
+        /// <summary>
+        /// Updates an existing user tag
+        /// </summary>
+        /// <param name="id">The user tag ID</param>
+        /// <param name="model">The updated user tag data</param>
+        /// <returns>The updated user tag</returns>
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(typeof(UserTagDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<UserTagDto>> UpdateJournalEntry(int id, [FromBody] UpdateUserTagDto model)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Invalid user tag ID",
+                        Details = "user tag ID must be a positive integer"
+                    });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Invalid input data",
+                        Details = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+                    });
+                }
+
+                if (!UserHelper.TryGetUserId(User, out var userId))
+                {
+                    _logger.LogWarning("Unauthorized user tag update attempt for ID {Id}", id);
+                    return Unauthorized(new ErrorResponse
+                    {
+                        Message = "Authentication failed",
+                        Details = "User identity could not be verified from the authentication token"
+                    });
+                }
+
+                var updated = await _tagService.UpdateUserTagAsync(id, model, userId);
+                if (updated == null)
+                {
+                    return NotFound(new ErrorResponse
+                    {
+                        Message = "user tag not found",
+                        Details = $"No user tag found with ID {id} for the current user"
+                    });
+                }
+
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid data provided for user tag update {Id}", id);
+                return BadRequest(new ErrorResponse { Message = "Invalid data provided", Details = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user tag {Id}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Message = "An error occurred while updating the user tag" });
+            }
+        }
+
 
         /// <summary>
         /// Deletes a personal tag

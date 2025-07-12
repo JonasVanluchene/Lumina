@@ -30,7 +30,7 @@ namespace Lumina.Services
             return _mapper.Map<IEnumerable<TagDto>>(tags);
         }
 
-        public async Task<IEnumerable<UserTagDto>> GetUserTagsAsync(string userId)
+        public async Task<IEnumerable<UserTagDto>> GetAllUserTagsAsync(string userId)
         {
             var tags = await _dbContext.UserTags
                 .Where(t => t.UserId == userId && t.IsActive)
@@ -65,7 +65,20 @@ namespace Lumina.Services
 
             return _mapper.Map<UserTagDto>(userTag);
         }
-        
+
+        public async Task<UserTagDto?> UpdateUserTagAsync(int id, UpdateUserTagDto dto, string userId)
+        {
+            var existingTag = await _dbContext.UserTags.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+            if (existingTag is null)
+            {
+                return null;
+            }
+
+            _mapper.Map(dto, existingTag);
+            await _dbContext.SaveChangesAsync();
+
+            return _mapper.Map<UserTagDto>(existingTag);
+        }
 
         public async Task DeleteUserTagAsync(int tagId, string userId)
         {

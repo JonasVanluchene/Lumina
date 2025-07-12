@@ -16,7 +16,9 @@ namespace Lumina.Services.Mapping
             CreateMap<UpdateJournalEntryDto, JournalEntry>();
 
             //Tag
-            CreateMap<CreateUserTagDto, Tag>();
+            CreateMap<CreateUserTagDto, UserTag>();
+            CreateMap<UpdateUserTagDto, UserTag>();
+
 
 
 
