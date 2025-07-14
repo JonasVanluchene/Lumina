@@ -30,7 +30,8 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)] // model validation errors
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]  // registration logic errors
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
@@ -42,6 +43,24 @@ public class AuthController : ControllerBase
                 {
                     Message = "Invalid input data",
                     Details = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+                });
+            }
+
+
+            // TODO: implement "Account Already Exists" Flow: try not to expose emailaddresses from already registered users
+
+
+            // Checks for duplicates internally, but don't reveal which one failed
+            var existingUserByEmail = await _userManager.FindByEmailAsync(dto.Email);
+            var username = string.IsNullOrWhiteSpace(dto.UserName) ? dto.Email : dto.UserName;
+            var existingUserByName = await _userManager.FindByNameAsync(username);
+
+            if (existingUserByEmail != null || existingUserByName != null)
+            {
+                // Generic message - don't reveal which field was duplicate (for privacy)
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Registration failed. Please check your information and try again. Email may already have registered"
                 });
             }
 
