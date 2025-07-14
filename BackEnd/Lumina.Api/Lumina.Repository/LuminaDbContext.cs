@@ -36,7 +36,9 @@ namespace Lumina.Repository
                 .WithOne(p => p.User)
                 .HasForeignKey<UserPreferences>(p => p.UserId);
 
-
+            builder.Entity<User>()
+                .HasIndex(u => u.NormalizedEmail)
+                .IsUnique();
             // Add further configuration as needed
         }
     }

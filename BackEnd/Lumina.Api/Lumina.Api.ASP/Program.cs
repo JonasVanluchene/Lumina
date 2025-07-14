@@ -56,11 +56,23 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
+//Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy.WithOrigins("http://localhost:5173") // Vite default port
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
 
 // Add ASP.NET Core Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
     {
-        // Optional: configure password complexity, lockout, etc.
+        // User settings
+        options.User.RequireUniqueEmail = true;
+
+        // Password settings
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;
@@ -122,6 +134,7 @@ builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<Lumina.Services.Mapping.MappingProfile>();
+    cfg.AddProfile<Lumina.Api.ASP.Mapping.MappingProfile>();
 });
 
 var app = builder.Build();
