@@ -365,3 +365,6 @@ FodyWeavers.xsd
 # appsettings.json
 
 appsettings.Development.json
+
+
+/images
