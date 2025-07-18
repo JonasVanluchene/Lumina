@@ -27,6 +27,7 @@ namespace Lumina.Repository
         public DbSet<Emotion> Emotions { get; set; }
         public DbSet<Activity> Activities { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<UserTag> UserTags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

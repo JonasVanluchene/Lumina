@@ -4,6 +4,7 @@ using Lumina.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lumina.Repository.Migrations
 {
     [DbContext(typeof(LuminaDbContext))]
-    partial class LuminaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250712090543_updated-tags")]
+    partial class updatedtags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -507,9 +510,7 @@ namespace Lumina.Repository.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .IsUnique()
-                        .HasDatabaseName("EmailIndex")
-                        .HasFilter("[NormalizedEmail] IS NOT NULL");
+                        .HasDatabaseName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()

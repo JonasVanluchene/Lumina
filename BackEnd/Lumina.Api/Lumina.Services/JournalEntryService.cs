@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Lumina.DTO.JournalEntry;
+using Lumina.DTO.Tag;
 using Lumina.Repository;
 using Lumina.Services.Interfaces;
 using Lumina.Models;
@@ -10,12 +11,14 @@ namespace Lumina.Services
     public class JournalEntryService : IJournalEntryService
     {
         private readonly LuminaDbContext _dbContext;
+        private readonly ITagService _tagService;
         private readonly IMapper _mapper;
 
-        public JournalEntryService(LuminaDbContext dbContext, IMapper mapper)
+        public JournalEntryService(LuminaDbContext dbContext, IMapper mapper, ITagService tagService)
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _tagService = tagService;
         }
 
         public async Task<IEnumerable<JournalEntryDto>> GetAllAsync(string userId)
@@ -23,12 +26,13 @@ namespace Lumina.Services
             var journalEntries = await _dbContext.JournalEntries
                 .Include(j => j.PrimaryMood)
                 .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
+                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
                 .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
                 .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
                 .Where(j => j.UserId == userId)
                 .OrderByDescending(j => j.CreatedAt)
                 .ToListAsync();
-            
+
             return _mapper.Map<IEnumerable<JournalEntryDto>>(journalEntries);
         }
 
@@ -37,6 +41,7 @@ namespace Lumina.Services
             var journalEntry = await _dbContext.JournalEntries
                 .Include(j => j.PrimaryMood)
                 .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
+                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
                 .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
                 .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
                 .FirstOrDefaultAsync(j => j.Id == id && j.UserId == userId);
@@ -52,25 +57,41 @@ namespace Lumina.Services
         {
             var journalEntry = _mapper.Map<JournalEntry>(dto);
             journalEntry.UserId = userId;
-            journalEntry.CreatedAt = DateTime.Now;
+            journalEntry.CreatedAt = DateTime.UtcNow;
 
-            // Add Tags
-            var tags = await _dbContext.Tags
+            // Add System Tags
+            var systemTags = await _dbContext.Tags
                 .Where(t => dto.TagIds.Contains(t.Id))
                 .ToListAsync();
 
-            //if (tags.Count != dto.TagIds.Count)
-            //    throw new Exception("One or more TagIds are invalid.");
-
-            foreach (var tag in tags)
+            foreach (var tag in systemTags)
             {
                 journalEntry.Tags.Add(new JournalEntryTag { Tag = tag });
             }
 
+            // Add existing User Tags (validate they belong to the current user)
+            var userTags = await _dbContext.UserTags
+                .Where(ut => dto.UserTagIds.Contains(ut.Id) && ut.UserId == userId && ut.IsActive)
+                .ToListAsync();
+
+            foreach (var userTag in userTags)
+            {
+                journalEntry.Tags.Add(new JournalEntryTag { UserTag = userTag });
+            }
+
+            //Create and add new User Tags
+            foreach (var newTagName in dto.NewUserTagNames)
+            {
+                var createUserTagDto = new CreateUserTagDto { Name = newTagName };
+                var newTagDto = await _tagService.CreateUserTagAsync(createUserTagDto, userId);
+                var newTag = await _dbContext.UserTags.FirstAsync(ut => ut.Id == newTagDto.Id);
+                journalEntry.Tags.Add(new JournalEntryTag { UserTag = newTag });
+            }
+
             // Validate and attach existing Emotions
             var emotions = await _dbContext.Emotions
-                .Where(e => dto.SecondaryEmotionIds.Contains(e.Id))
-                .ToListAsync();
+            .Where(e => dto.SecondaryEmotionIds.Contains(e.Id))
+            .ToListAsync();
 
             //if (emotions.Count != dto.SecondaryEmotionIds.Count)
             //    throw new Exception("One or more EmotionIds are invalid.");
@@ -87,6 +108,7 @@ namespace Lumina.Services
             var savedEntry = await _dbContext.JournalEntries
                 .Include(j => j.PrimaryMood)
                 .Include(j => j.Tags).ThenInclude(t => t.Tag)
+                .Include(j => j.Tags).ThenInclude(t => t.UserTag)
                 .Include(j => j.SecondaryEmotions).ThenInclude(e => e.Emotion)
                 .FirstAsync(j => j.Id == journalEntry.Id);
 
@@ -104,20 +126,39 @@ namespace Lumina.Services
                 return null;
 
             _mapper.Map(dto, existingEntry);
-            existingEntry.UpdatedAt = DateTime.Now;
+            existingEntry.UpdatedAt = DateTime.UtcNow;
 
-            // Update Tags
+            // Update Tags - Clear existing tags
             existingEntry.Tags.Clear();
-            var tags = await _dbContext.Tags
+
+            // Add System Tags
+            var systemTags = await _dbContext.Tags
                 .Where(t => dto.TagIds.Contains(t.Id))
                 .ToListAsync();
 
-            //if (tags.Count != dto.TagIds.Count)
-            //    throw new Exception("One or more TagIds are invalid.");
-
-            foreach (var tag in tags)
+            foreach (var tag in systemTags)
             {
                 existingEntry.Tags.Add(new JournalEntryTag { Tag = tag });
+            }
+
+            // Add User Tags (validate they belong to the current user)
+            var userTags = await _dbContext.UserTags
+                .Where(ut => dto.UserTagIds.Contains(ut.Id) && ut.UserId == userId && ut.IsActive)
+                .ToListAsync();
+
+            foreach (var userTag in userTags)
+            {
+                existingEntry.Tags.Add(new JournalEntryTag { UserTag = userTag });
+            }
+
+            //Add newly created user tags
+            // Create and add new User Tags
+            foreach (var newTagName in dto.NewUserTagNames)
+            {
+                var createUserTagDto = new CreateUserTagDto { Name = newTagName };
+                var newTagDto = await _tagService.CreateUserTagAsync(createUserTagDto, userId);
+                var newTag = await _dbContext.UserTags.FirstAsync(ut => ut.Id == newTagDto.Id);
+                existingEntry.Tags.Add(new JournalEntryTag { UserTag = newTag });
             }
 
             // Update Secondary Emotions
@@ -126,9 +167,6 @@ namespace Lumina.Services
                 .Where(e => dto.SecondaryEmotionIds.Contains(e.Id))
                 .ToListAsync();
 
-            //if (emotions.Count != dto.SecondaryEmotionIds.Count)
-            //    throw new Exception("One or more EmotionIds are invalid.");
-
             foreach (var emotion in emotions)
             {
                 existingEntry.SecondaryEmotions.Add(new JournalEntryEmotion { Emotion = emotion });
@@ -136,9 +174,11 @@ namespace Lumina.Services
 
             await _dbContext.SaveChangesAsync();
 
+            // Reload with includes
             var updated = await _dbContext.JournalEntries
                 .Include(j => j.PrimaryMood)
                 .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
+                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
                 .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
                 .FirstAsync(j => j.Id == id);
 

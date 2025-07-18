@@ -3,13 +3,19 @@
 
 namespace Lumina.Models
 {
-    [Table(nameof(Tag))]
-    public class Tag
+    [Table(nameof(UserTag))]
+    public class UserTag
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public bool IsSystemDefined { get; set; }
-        public int SortOrder { get; set; }
+        
+        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
+
+
+        public string UserId { get; set; }
+        public User User { get; set; }
         public ICollection<JournalEntryTag> JournalEntryTags { get; set; } = new List<JournalEntryTag>();
     }
+
 }
