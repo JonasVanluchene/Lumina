@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Lumina.DTO.Activity;
 using Lumina.DTO.Tag;
+using Lumina.Models;
 using Lumina.Repository;
 using Lumina.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,29 @@ namespace Lumina.Services
         }
         public async Task<UserActivityDto> CreateUserActivityAsync(CreateUserActivityDto dto, string userId)
         {
-            throw new NotImplementedException();
+            var name = dto.Name.Trim();
+
+            bool exists = await _dbContext.UserActivities
+                .AnyAsync(t => t.UserId == userId &&
+                               EF.Functions.Like(t.Name, name) &&
+                               t.IsActive);
+            if (exists)
+            {
+                throw new InvalidOperationException("You already have an activity with this name.");
+            }
+
+            var userActivity = new UserActivity
+            {
+                Name = name,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            _dbContext.UserActivities.Add(userActivity);
+            await _dbContext.SaveChangesAsync();
+
+            return _mapper.Map<UserActivityDto>(userActivity);
         }
 
         public async Task DeleteUserActivityAsync(int activityId, string userId)
