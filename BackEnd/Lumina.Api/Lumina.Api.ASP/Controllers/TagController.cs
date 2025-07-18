@@ -3,18 +3,20 @@ using Lumina.Api.ASP.helpers;
 using Lumina.DTO.Tag;
 using Lumina.Services;
 using Lumina.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lumina.Api.ASP.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TagController : ControllerBase
     {
         private readonly ITagService _tagService;
-        private readonly ILogger<JournalEntryController> _logger;
+        private readonly ILogger<TagController> _logger;
 
-        public TagController(ITagService tagService, ILogger<JournalEntryController> logger)
+        public TagController(ITagService tagService, ILogger<TagController> logger)
         {
             _tagService = tagService;
             _logger = logger;

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Lumina.DTO.Activity;
 using Lumina.DTO.JournalEntry;
 using Lumina.DTO.Tag;
 using Lumina.Models;
@@ -37,6 +38,10 @@ namespace Lumina.Services.Mapping
             //Tag
             CreateMap<UserTag, UserTagDto>();
             CreateMap<Tag, TagDto>();
+
+            //Activity
+            CreateMap<UserActivity, UserActivityDto>();
+            CreateMap<Tag, ActivityDto>();
         }
         
     }

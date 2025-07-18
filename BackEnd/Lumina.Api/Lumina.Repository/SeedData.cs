@@ -54,7 +54,20 @@ namespace Lumina.Repository
 
                 context.Emotions.AddRange(emotions);
             }
+            //  Seed Activities
+            if (!context.Activities.Any())
+            {
+                var activities = new List<Activity>
+                {
+                    new Activity { Name = "Exercise", Icon = "🏋️‍♂️", Category = "Health", IsSystemDefined = true, SortOrder = 1 },
+                    new Activity { Name = "Work", Icon = "💻", Category = "Work", IsSystemDefined = true, SortOrder = 2 },
+                    new Activity { Name = "Reading", Icon = "📚", Category = "Personal", IsSystemDefined = true, SortOrder = 3 },
+                    new Activity { Name = "Socializing", Icon = "🎉", Category = "Social", IsSystemDefined = true, SortOrder = 4 },
+                    new Activity { Name = "Meditation", Icon = "🧘‍♀️", Category = "Health", IsSystemDefined = true, SortOrder = 5 }
+                };
 
+                context.Activities.AddRange(activities);
+            }
             await context.SaveChangesAsync();
         }
 
