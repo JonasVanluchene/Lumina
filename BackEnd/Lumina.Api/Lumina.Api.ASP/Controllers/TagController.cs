@@ -1,7 +1,6 @@
 ﻿using Lumina.Api.ASP.DTO;
 using Lumina.Api.ASP.helpers;
 using Lumina.DTO.Tag;
-using Lumina.Services;
 using Lumina.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -163,7 +162,7 @@ namespace Lumina.Api.ASP.Controllers
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<UserTagDto>> UpdateJournalEntry(int id, [FromBody] UpdateUserTagDto model)
+        public async Task<ActionResult<UserTagDto>> UpdateUserTag(int id, [FromBody] UpdateUserTagDto model)
         {
             try
             {

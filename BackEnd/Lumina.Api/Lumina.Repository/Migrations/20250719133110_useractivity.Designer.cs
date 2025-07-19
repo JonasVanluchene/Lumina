@@ -4,6 +4,7 @@ using Lumina.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lumina.Repository.Migrations
 {
     [DbContext(typeof(LuminaDbContext))]
-    partial class LuminaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250719133110_useractivity")]
+    partial class useractivity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -837,7 +840,7 @@ namespace Lumina.Repository.Migrations
             modelBuilder.Entity("Lumina.Models.JournalEntryActivity", b =>
                 {
                     b.HasOne("Lumina.Models.Activity", "Activity")
-                        .WithMany("JournalEntryActivities")
+                        .WithMany()
                         .HasForeignKey("ActivityId");
 
                     b.HasOne("Lumina.Models.JournalEntry", "JournalEntry")
@@ -847,7 +850,7 @@ namespace Lumina.Repository.Migrations
                         .IsRequired();
 
                     b.HasOne("Lumina.Models.UserActivity", "UserActivity")
-                        .WithMany("JournalEntryActivities")
+                        .WithMany()
                         .HasForeignKey("UserActivityId");
 
                     b.Navigation("Activity");
@@ -1024,11 +1027,6 @@ namespace Lumina.Repository.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Lumina.Models.Activity", b =>
-                {
-                    b.Navigation("JournalEntryActivities");
-                });
-
             modelBuilder.Entity("Lumina.Models.Goal", b =>
                 {
                     b.Navigation("Progress");
@@ -1069,11 +1067,6 @@ namespace Lumina.Repository.Migrations
 
                     b.Navigation("Preferences")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Lumina.Models.UserActivity", b =>
-                {
-                    b.Navigation("JournalEntryActivities");
                 });
 
             modelBuilder.Entity("Lumina.Models.UserTag", b =>

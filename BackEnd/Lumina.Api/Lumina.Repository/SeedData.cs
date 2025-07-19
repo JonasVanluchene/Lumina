@@ -30,11 +30,11 @@ namespace Lumina.Repository
             {
                 var tags = new List<Tag>
                 {
-                    new Tag { Name = "Work" },
-                    new Tag { Name = "Family" },
-                    new Tag { Name = "Health" },
-                    new Tag { Name = "Study" },
-                    new Tag { Name = "Social" }
+                    new Tag { Name = "Work", IsSystemDefined = true },
+                    new Tag { Name = "Family", IsSystemDefined = true },
+                    new Tag { Name = "Health" , IsSystemDefined = true},
+                    new Tag { Name = "Study" , IsSystemDefined = true},
+                    new Tag { Name = "Social", IsSystemDefined = true}
                 };
 
                 context.Tags.AddRange(tags);

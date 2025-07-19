@@ -20,7 +20,9 @@ namespace Lumina.Services.Mapping
             CreateMap<CreateUserTagDto, UserTag>();
             CreateMap<UpdateUserTagDto, UserTag>();
 
-
+            //Activity
+            CreateMap<CreateUserActivityDto, UserActivity>();
+            CreateMap<UpdateUserActivityDto, UserActivity>();
 
 
             // Read mapping
@@ -45,7 +47,7 @@ namespace Lumina.Services.Mapping
 
             //Activity
             CreateMap<UserActivity, UserActivityDto>();
-            CreateMap<Tag, ActivityDto>();
+            CreateMap<Activity, ActivityDto>();
         }
         
     }
