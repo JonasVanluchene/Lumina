@@ -6,6 +6,7 @@ using Lumina.Repository;
 using Lumina.Services.Interfaces;
 using Lumina.Models;
 using Microsoft.EntityFrameworkCore;
+using Lumina.Services.Helpers;
 
 namespace Lumina.Services
 {
@@ -27,34 +28,22 @@ namespace Lumina.Services
 
         public async Task<IEnumerable<JournalEntryDto>> GetAllAsync(string userId)
         {
-            var journalEntries = await _dbContext.JournalEntries
-                .Include(j => j.PrimaryMood)
-                .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
-                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
-                .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
-                .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
-                .Where(j => j.UserId == userId)
-                .OrderByDescending(j => j.CreatedAt)
-                .ToListAsync();
+            var journalEntries = await JournalEntryHelper
+            .ProjectToDto(_dbContext.JournalEntries.Where(j => j.UserId == userId).OrderByDescending(j => j.CreatedAt))
+            .ToListAsync();
 
-            return _mapper.Map<IEnumerable<JournalEntryDto>>(journalEntries);
+            return journalEntries;
+           
         }
 
         public async Task<JournalEntryDto?> GetByIdAsync(int id, string userId)
         {
-            var journalEntry = await _dbContext.JournalEntries
-                .Include(j => j.PrimaryMood)
-                .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
-                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
-                .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
-                .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
-                .FirstOrDefaultAsync(j => j.Id == id && j.UserId == userId);
+            var journalEntry = await JournalEntryHelper
+            .ProjectToDto(_dbContext.JournalEntries.Where(j => j.UserId == userId && j.Id == id))
+            .FirstOrDefaultAsync();
 
-            if (journalEntry is null)
-                return null;
+            return journalEntry;
 
-            var dto = _mapper.Map<JournalEntryDto>(journalEntry);
-            return dto;
         }
 
         public async Task<JournalEntryDto> CreateAsync(CreateJournalEntryDto dto, string userId)
@@ -114,6 +103,7 @@ namespace Lumina.Services
                 if (userActivity != null)
                 {
                     journalEntry.Activities.Add(new JournalEntryActivity { UserActivity = userActivity });
+                    continue;
                 }
 
                 // 3. Create new user activity
@@ -123,88 +113,6 @@ namespace Lumina.Services
                 journalEntry.Activities.Add(new JournalEntryActivity { UserActivity = newUserActivity });
             }
 
-
-            //// Add System Tags
-            //var systemTags = await _dbContext.Tags
-            //    .Where(t => dto.TagIds.Contains(t.Id))
-            //    .ToListAsync();
-
-            //foreach (var tag in systemTags)
-            //{
-            //    journalEntry.Tags.Add(new JournalEntryTag { Tag = tag });
-            //}
-
-            //// Add existing User Tags (validate they belong to the current user)
-            //var userTags = await _dbContext.UserTags
-            //    .Where(ut => dto.UserTagIds.Contains(ut.Id) && ut.UserId == userId && ut.IsActive)
-            //    .ToListAsync();
-
-            //foreach (var userTag in userTags)
-            //{
-            //    journalEntry.Tags.Add(new JournalEntryTag { UserTag = userTag });
-            //}
-
-            ////Create and add new User Tags
-            //foreach (var newTagName in dto.NewUserTagNames)
-            //{
-            //    var trimmedName = newTagName.Trim();
-            //    var existingTag = await _dbContext.UserTags
-            //        .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.Name == trimmedName && ut.IsActive);
-
-            //    UserTag userTag;
-            //    if (existingTag != null)
-            //    {
-            //        userTag = existingTag;
-            //    }
-            //    else
-            //    {
-            //        var createUserTagDto = new CreateUserTagDto { Name = trimmedName };
-            //        var newTagDto = await _tagService.CreateUserTagAsync(createUserTagDto, userId);
-            //        userTag = await _dbContext.UserTags.FirstAsync(ut => ut.Id == newTagDto.Id);
-            //    }
-            //    journalEntry.Tags.Add(new JournalEntryTag { UserTag = userTag });
-            //}
-
-            //// Add System Activities
-            //var systemActivities = await _dbContext.Activities
-            //    .Where(t => dto.ActivityIds.Contains(t.Id))
-            //    .ToListAsync();
-
-            //foreach (var activity in systemActivities)
-            //{
-            //    journalEntry.Activities.Add(new JournalEntryActivity { Activity = activity });
-            //}
-
-            //// Add existing User Activities (validate they belong to the current user)
-            //var userActivities = await _dbContext.UserActivities
-            //    .Where(ua => dto.UserActivityIds.Contains(ua.Id) && ua.UserId == userId && ua.IsActive)
-            //    .ToListAsync();
-
-            //foreach (var userActivity in userActivities)
-            //{
-            //    journalEntry.Activities.Add(new JournalEntryActivity { UserActivity = userActivity });
-            //}
-
-            ////Create and add new User Activites
-            //foreach (var newActivityName in dto.NewUserActivityNames)
-            //{
-            //    var trimmedName = newActivityName.Trim();
-            //    var existingActivity = await _dbContext.UserActivities
-            //        .FirstOrDefaultAsync(ua => ua.UserId == userId && ua.Name == trimmedName && ua.IsActive);
-
-            //    UserActivity userActivity;
-            //    if (existingActivity != null)
-            //    {
-            //        userActivity = existingActivity;
-            //    }
-            //    else
-            //    {
-            //        var createUserActivityDto = new CreateUserActivityDto { Name = trimmedName };
-            //        var newActivityDto = await _activityService.CreateUserActivityAsync(createUserActivityDto, userId);
-            //        userActivity = await _dbContext.UserActivities.FirstAsync(ua => ua.Id == newActivityDto.Id);
-            //    }
-            //    journalEntry.Activities.Add(new JournalEntryActivity { UserActivity = userActivity });
-            //}
 
             // Validate and attach existing Emotions
             var emotions = await _dbContext.Emotions
@@ -222,23 +130,19 @@ namespace Lumina.Services
             await _dbContext.JournalEntries.AddAsync(journalEntry);
             await _dbContext.SaveChangesAsync();
 
-            // Reload with includes
-            var savedEntry = await _dbContext.JournalEntries
-                .Include(j => j.PrimaryMood)
-                .Include(j => j.Tags).ThenInclude(t => t.Tag)
-                .Include(j => j.Tags).ThenInclude(t => t.UserTag)
-                .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
-                .Include(j => j.Activities).ThenInclude(ja => ja.UserActivity)
-                .Include(j => j.SecondaryEmotions).ThenInclude(e => e.Emotion)
-                .FirstAsync(j => j.Id == journalEntry.Id);
+            // Project to DTO instead of loading with .Include
+            var savedEntryDto = await JournalEntryHelper
+            .ProjectToDto(_dbContext.JournalEntries.Where(j => j.UserId == userId && j.Id == journalEntry.Id))
+            .FirstOrDefaultAsync();            
 
-            return _mapper.Map<JournalEntryDto>(savedEntry);
+            return savedEntryDto;
         }
 
         public async Task<JournalEntryDto?> UpdateAsync(int id, UpdateJournalEntryDto dto, string userId)
         {
             var existingEntry = await _dbContext.JournalEntries
                 .Include(j => j.Tags)
+                .Include(j => j.Activities)
                 .Include(j => j.SecondaryEmotions)
                 .FirstOrDefaultAsync(j => j.Id == id && j.UserId == userId);
 
@@ -323,17 +227,13 @@ namespace Lumina.Services
 
             await _dbContext.SaveChangesAsync();
 
-            // Reload with includes
-            var updated = await _dbContext.JournalEntries
-                .Include(j => j.PrimaryMood)
-                .Include(j => j.Tags).ThenInclude(jt => jt.Tag)
-                .Include(j => j.Tags).ThenInclude(jt => jt.UserTag)
-                .Include(j => j.Activities).ThenInclude(ja => ja.Activity)
-                .Include(j => j.Activities).ThenInclude(ja => ja.UserActivity)
-                .Include(j => j.SecondaryEmotions).ThenInclude(js => js.Emotion)
-                .FirstAsync(j => j.Id == id);
+            // Project to DTO instead of loading with .Include
 
-            return _mapper.Map<JournalEntryDto>(updated);
+            var updatedDto = await JournalEntryHelper
+            .ProjectToDto(_dbContext.JournalEntries.Where(j => j.UserId == userId && j.Id == id))
+            .FirstOrDefaultAsync();
+            
+            return updatedDto;
         }
 
         public async Task<bool> DeleteAsync(int id, string userId)
