@@ -28,7 +28,7 @@ namespace Lumina.Repository
         public DbSet<Activity> Activities { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<UserTag> UserTags { get; set; }
-
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
