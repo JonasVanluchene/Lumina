@@ -30,11 +30,11 @@ namespace Lumina.Repository
             {
                 var tags = new List<Tag>
                 {
-                    new Tag { Name = "Work" },
-                    new Tag { Name = "Family" },
-                    new Tag { Name = "Health" },
-                    new Tag { Name = "Study" },
-                    new Tag { Name = "Social" }
+                    new Tag { Name = "Work", IsSystemDefined = true },
+                    new Tag { Name = "Family", IsSystemDefined = true },
+                    new Tag { Name = "Health" , IsSystemDefined = true},
+                    new Tag { Name = "Study" , IsSystemDefined = true},
+                    new Tag { Name = "Social", IsSystemDefined = true}
                 };
 
                 context.Tags.AddRange(tags);
@@ -54,7 +54,20 @@ namespace Lumina.Repository
 
                 context.Emotions.AddRange(emotions);
             }
+            //  Seed Activities
+            if (!context.Activities.Any())
+            {
+                var activities = new List<Activity>
+                {
+                    new Activity { Name = "Exercise", Icon = "🏋️‍♂️", Category = "Health", IsSystemDefined = true, SortOrder = 1 },
+                    new Activity { Name = "Work", Icon = "💻", Category = "Work", IsSystemDefined = true, SortOrder = 2 },
+                    new Activity { Name = "Reading", Icon = "📚", Category = "Personal", IsSystemDefined = true, SortOrder = 3 },
+                    new Activity { Name = "Socializing", Icon = "🎉", Category = "Social", IsSystemDefined = true, SortOrder = 4 },
+                    new Activity { Name = "Meditation", Icon = "🧘‍♀️", Category = "Health", IsSystemDefined = true, SortOrder = 5 }
+                };
 
+                context.Activities.AddRange(activities);
+            }
             await context.SaveChangesAsync();
         }
 

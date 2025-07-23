@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Lumina.DTO.Activity;
 using Lumina.DTO.JournalEntry;
 using Lumina.DTO.Tag;
 using Lumina.Models;
@@ -19,7 +20,9 @@ namespace Lumina.Services.Mapping
             CreateMap<CreateUserTagDto, UserTag>();
             CreateMap<UpdateUserTagDto, UserTag>();
 
-
+            //Activity
+            CreateMap<CreateUserActivityDto, UserActivity>();
+            CreateMap<UpdateUserActivityDto, UserActivity>();
 
 
             // Read mapping
@@ -31,12 +34,20 @@ namespace Lumina.Services.Mapping
                     src.Tags.Where(jt => jt.Tag != null).Select(jt => jt.Tag.Name).ToList()))
                 .ForMember(dest => dest.UserTags, opt => opt.MapFrom(src =>
                     src.Tags.Where(jt => jt.UserTag != null).Select(jt => jt.UserTag.Name).ToList()))
+                .ForMember(dest => dest.Activities, opt => opt.MapFrom(src =>
+                    src.Activities.Where(jt => jt.Activity != null).Select(jt => jt.Activity.Name).ToList()))
+                .ForMember(dest => dest.UserActivities, opt => opt.MapFrom(src =>
+                    src.Activities.Where(jt => jt.UserActivity != null).Select(jt => jt.UserActivity.Name).ToList()))
                 .ForMember(dest => dest.SecondaryEmotions, opt => opt.MapFrom(src =>
                     src.SecondaryEmotions.Select(js => js.Emotion.Name).ToList()));
 
             //Tag
             CreateMap<UserTag, UserTagDto>();
             CreateMap<Tag, TagDto>();
+
+            //Activity
+            CreateMap<UserActivity, UserActivityDto>();
+            CreateMap<Activity, ActivityDto>();
         }
         
     }

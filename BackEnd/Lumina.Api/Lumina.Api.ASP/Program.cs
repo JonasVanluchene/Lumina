@@ -153,6 +153,7 @@ builder.Services.AddDbContext<LuminaDbContext>(options =>
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
 builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
 
 //Automapper
 builder.Services.AddAutoMapper(cfg =>

@@ -1,36 +1,37 @@
 ﻿using Lumina.Api.ASP.DTO;
 using Lumina.Api.ASP.helpers;
-using Lumina.DTO.Tag;
+using Lumina.DTO.Activity;
 using Lumina.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace Lumina.Api.ASP.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class TagController : ControllerBase
+    public class ActivitiesController : ControllerBase
     {
-        private readonly ITagService _tagService;
-        private readonly ILogger<TagController> _logger;
+        private readonly IActivityService _activityService;
+        private readonly ILogger<ActivitiesController> _logger;
 
-        public TagController(ITagService tagService, ILogger<TagController> logger)
+        public ActivitiesController(IActivityService activityService, ILogger<ActivitiesController> logger)
         {
-            _tagService = tagService;
+            _activityService = activityService;
             _logger = logger;
         }
 
         /// <summary>
-        /// Gets all System Tags 
+        /// Gets all System Activities
         /// </summary>
-        /// <returns>List of System tags</returns>
+        /// <returns>List of System Activities</returns>
         [HttpGet("system")]
-        [ProducesResponseType(typeof(List<TagDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ActivityDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<TagDto>>> GetAllSystemTags()
+        public async Task<ActionResult<List<ActivityDto>>> GetAllSystemActivities()
         {
             try
             {
@@ -44,27 +45,27 @@ namespace Lumina.Api.ASP.Controllers
                 //    });
                 //}
 
-                var tags = await _tagService.GetAllSystemTagsAsync();
-                return Ok(tags);
+                var activities = await _activityService.GetAllSystemActivitiesAsync();
+                return Ok(activities);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving system tags");
+                _logger.LogError(ex, "Error retrieving system Activities");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse { Message = "An error occurred while retrieving system tags" });
+                    new ErrorResponse { Message = "An error occurred while retrieving system activities" });
             }
         }
 
         /// <summary>
-        /// Gets all personal tags for the authenticated user
+        /// Gets all personal activities for the authenticated user
         /// </summary>
-        /// <returns>List of personal tags</returns>
+        /// <returns>List of personal activities</returns>
         [HttpGet("user")]
-        [ProducesResponseType(typeof(List<UserTagDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<UserActivityDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<UserTagDto>>> GetAllUserTags()
+        public async Task<ActionResult<List<UserActivityDto>>> GetAllUserActivities()
         {
             try
             {
@@ -78,37 +79,37 @@ namespace Lumina.Api.ASP.Controllers
                     });
                 }
 
-                var tags = await _tagService.GetAllUserTagsAsync(userId);
-                return Ok(tags);
+                var activities = await _activityService.GetAllUserActivitiesAsync(userId);
+                return Ok(activities);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving personal tags for user");
+                _logger.LogError(ex, "Error retrieving personal activities for user");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse { Message = "An error occurred while retrieving user tags" });
+                    new ErrorResponse { Message = "An error occurred while retrieving user activities" });
             }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<UserTagDto>> GetUserTagById(int id)
+        public async Task<ActionResult<UserActivityDto>> GetUserActivityById(int id)
         {
             // TODO: Implement when needed
             throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Creates a new personal tag
+        /// Creates a new personal activity
         /// </summary>
-        /// <param name="model">The user tag data</param>
-        /// <returns>The created user tag</returns>
+        /// <param name="model">The user activity data</param>
+        /// <returns>The created user activity</returns>
         [HttpPost]
-        [ProducesResponseType(typeof(UserTagDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(UserActivityDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<UserTagDto>> CreateUserTag([FromBody] CreateUserTagDto model)
+        public async Task<ActionResult<UserActivityDto>> CreateUserActivity([FromBody] CreateUserActivityDto model)
         {
             try
             {
@@ -124,7 +125,7 @@ namespace Lumina.Api.ASP.Controllers
 
                 if (!UserHelper.TryGetUserId(User, out var userId))
                 {
-                    _logger.LogWarning("Unauthorized journal entry creation attempt");
+                    _logger.LogWarning("Unauthorized activity creation attempt");
                     return Unauthorized(new ErrorResponse
                     {
                         Message = "Authentication failed",
@@ -132,37 +133,37 @@ namespace Lumina.Api.ASP.Controllers
                     });
                 }
 
-                var tag = await _tagService.CreateUserTagAsync(model, userId);
-                return CreatedAtAction(nameof(GetUserTagById), new { id = tag.Id }, tag);
+                var activity = await _activityService.CreateUserActivityAsync(model, userId);
+                return CreatedAtAction(nameof(GetUserActivityById), new { id = activity.Id }, activity);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Invalid data provided for user tag creation");
+                _logger.LogWarning(ex, "Invalid data provided for user activity creation");
                 return BadRequest(new ErrorResponse { Message = "Invalid data provided", Details = ex.Message });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating journal entry");
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse { Message = "An error occurred while creating the user tag" });
+                    new ErrorResponse { Message = "An error occurred while creating the user activity" });
             }
         }
 
         /// <summary>
-        /// Updates an existing user tag
+        /// Updates an existing user activity
         /// </summary>
-        /// <param name="id">The user tag ID</param>
-        /// <param name="model">The updated user tag data</param>
-        /// <returns>The updated user tag</returns>
+        /// <param name="id">The user activity ID</param>
+        /// <param name="model">The updated user activity data</param>
+        /// <returns>The updated user activity</returns>
         [HttpPut("{id:int}")]
-        [ProducesResponseType(typeof(UserTagDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(UserActivityDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<UserTagDto>> UpdateUserTag(int id, [FromBody] UpdateUserTagDto model)
+        public async Task<ActionResult<UserActivityDto>> UpdateUserActivity(int id, [FromBody] UpdateUserActivityDto model)
         {
             try
             {
@@ -170,8 +171,8 @@ namespace Lumina.Api.ASP.Controllers
                 {
                     return BadRequest(new ErrorResponse
                     {
-                        Message = "Invalid user tag ID",
-                        Details = "user tag ID must be a positive integer"
+                        Message = "Invalid user activity ID",
+                        Details = "user activity ID must be a positive integer"
                     });
                 }
 
@@ -186,7 +187,7 @@ namespace Lumina.Api.ASP.Controllers
 
                 if (!UserHelper.TryGetUserId(User, out var userId))
                 {
-                    _logger.LogWarning("Unauthorized user tag update attempt for ID {Id}", id);
+                    _logger.LogWarning("Unauthorized user activity update attempt for ID {Id}", id);
                     return Unauthorized(new ErrorResponse
                     {
                         Message = "Authentication failed",
@@ -194,13 +195,13 @@ namespace Lumina.Api.ASP.Controllers
                     });
                 }
 
-                var updated = await _tagService.UpdateUserTagAsync(id, model, userId);
+                var updated = await _activityService.UpdateUserActivityAsync(id, model, userId);
                 if (updated == null)
                 {
                     return NotFound(new ErrorResponse
                     {
-                        Message = "user tag not found",
-                        Details = $"No user tag found with ID {id} for the current user"
+                        Message = "user activity not found",
+                        Details = $"No user activity found with ID {id} for the current user"
                     });
                 }
 
@@ -208,22 +209,22 @@ namespace Lumina.Api.ASP.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Invalid data provided for user tag update {Id}", id);
+                _logger.LogWarning(ex, "Invalid data provided for user activity update {Id}", id);
                 return BadRequest(new ErrorResponse { Message = "Invalid data provided", Details = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user tag {Id}", id);
+                _logger.LogError(ex, "Error updating user activity {Id}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse { Message = "An error occurred while updating the user tag" });
+                    new ErrorResponse { Message = "An error occurred while updating the user activity" });
             }
         }
 
 
         /// <summary>
-        /// Deletes a personal tag
+        /// Deletes a personal activity
         /// </summary>
-        /// <param name="id">The user tag ID</param>
+        /// <param name="id">The user activity ID</param>
         /// <returns>No content on success</returns>
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -240,14 +241,14 @@ namespace Lumina.Api.ASP.Controllers
                 {
                     return BadRequest(new ErrorResponse
                     {
-                        Message = "Invalid user tag ID",
-                        Details = "user tag ID must be a positive integer"
+                        Message = "Invalid user activity ID",
+                        Details = "user activity ID must be a positive integer"
                     });
                 }
 
                 if (!UserHelper.TryGetUserId(User, out var userId))
                 {
-                    _logger.LogWarning("Unauthorized user tag deletion attempt for ID {Id}", id);
+                    _logger.LogWarning("Unauthorized user activity deletion attempt for ID {Id}", id);
                     return Unauthorized(new ErrorResponse
                     {
                         Message = "Authentication failed",
@@ -255,7 +256,7 @@ namespace Lumina.Api.ASP.Controllers
                     });
                 }
 
-                await _tagService.DeleteUserTagAsync(id, userId);
+                await _activityService.DeleteUserActivityAsync(id, userId);
 
                 //if (!success)
                 //{
@@ -270,9 +271,9 @@ namespace Lumina.Api.ASP.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting user tag {Id}", id);
+                _logger.LogError(ex, "Error deleting user activity {Id}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse { Message = "An error occurred while deleting the user tag" });
+                    new ErrorResponse { Message = "An error occurred while deleting the user activity" });
             }
         }
     }
