@@ -4,6 +4,7 @@ using Lumina.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lumina.Repository.Migrations
 {
     [DbContext(typeof(LuminaDbContext))]
-    partial class LuminaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250723123837_refresh-token")]
+    partial class refreshtoken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,12 +431,6 @@ namespace Lumina.Repository.Migrations
 
                     b.Property<bool>("IsUsed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("ReplacedByToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Token")
                         .IsRequired()

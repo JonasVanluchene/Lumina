@@ -96,6 +96,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 //TODO:  add the OnChallenge event to existing JWT Bearer configuration (to display custom message on unauthenticated access) --> example code is commented
 //TODO: Refactor IssuerSigningKey = --> evade null reference warning
+
 //Add jwt token bearer
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSettings);
@@ -118,25 +119,37 @@ builder.Services.AddAuthentication(options =>
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
         };
-        //options.Events = new JwtBearerEvents
-        //{
-        //    OnChallenge = context =>
-        //    {
-        //        // Skip the default logic
-        //        context.HandleResponse();
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Try to get token from Authorization header
+                var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                if (string.IsNullOrEmpty(token))
+                {
+                    // Fallback to cookie
+                    token = context.Request.Cookies["access_token"];
+                }
+                context.Token = token;
+                return Task.CompletedTask;
+            }
+            //OnChallenge = context =>
+            //    {
+            //        // Skip the default logic
+            //        context.HandleResponse();
 
-        //        context.Response.StatusCode = 401;
-        //        context.Response.ContentType = "application/json";
+            //        context.Response.StatusCode = 401;
+            //        context.Response.ContentType = "application/json";
 
-        //        var errorResponse = new ErrorResponse()
-        //        {
-        //            Message = "Authentication failed",
-        //            Details = "User identity could not be verified from the authentication token"
-        //        };
+            //        var errorResponse = new ErrorResponse()
+            //        {
+            //            Message = "Authentication failed",
+            //            Details = "User identity could not be verified from the authentication token"
+            //        };
 
-        //        return context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorResponse));
-        //    }
-        //};
+            //        return context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorResponse));
+            //    }
+        };       
     });
 
 
@@ -154,6 +167,8 @@ builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddHostedService<Lumina.Services.BackgroundServices.RefreshTokenCleanupService>();
 
 //Automapper
 builder.Services.AddAutoMapper(cfg =>

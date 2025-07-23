@@ -3,9 +3,11 @@ using Lumina.Api.ASP.DTO;
 using Lumina.Api.ASP.DTO.Auth;
 using Lumina.Models;
 using Lumina.Services;
+using Lumina.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lumina.Api.ASP.Controllers
 {
@@ -15,11 +17,12 @@ namespace Lumina.Api.ASP.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly JwtTokenService _jwtTokenService;
+        private readonly IRefreshTokenService _refreshTokenService;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<AuthController> _logger;
         private readonly IMapper _mapper;
 
-        public AuthController(UserManager<User> userManager, JwtTokenService jwtTokenService,
+        public AuthController(UserManager<User> userManager, JwtTokenService jwtTokenService, IRefreshTokenService refreshTokenService,
             SignInManager<User> signInManager, ILogger<AuthController> logger, IMapper mapper)
         {
             _userManager = userManager;
@@ -27,6 +30,7 @@ namespace Lumina.Api.ASP.Controllers
             _signInManager = signInManager;
             _logger = logger;
             _mapper = mapper;
+            _refreshTokenService = refreshTokenService;
         }
 
         /// <summary>
@@ -53,7 +57,7 @@ namespace Lumina.Api.ASP.Controllers
 
 
                 // TODO: implement "Account Already Exists" Flow: try not to expose emailaddresses from already registered users
-
+                // TODO: check token return in response headers (not safe)
 
                 // Checks for duplicates internally, but don't reveal which one failed
                 var existingUserByEmail = await _userManager.FindByEmailAsync(dto.Email);
@@ -83,6 +87,14 @@ namespace Lumina.Api.ASP.Controllers
                 }
 
                 var token = _jwtTokenService.CreateToken(user);
+                // Set JWT as HttpOnly cookie
+                Response.Cookies.Append("access_token", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // Set to true in production
+                    SameSite = SameSiteMode.Strict, // Or Lax, depending on your needs
+                    Expires = DateTimeOffset.UtcNow.AddMinutes(60) // Match your token expiry
+                });
                 var userDto = new UserDto
                 {
                     Id = user.Id,
@@ -90,9 +102,18 @@ namespace Lumina.Api.ASP.Controllers
                     UserName = user.UserName,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Token = token
+                    Token = token  //This return is for swagger (not safe)
                 };
 
+
+                var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user);
+                Response.Cookies.Append("refresh_token", refreshToken.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = refreshToken.ExpiresAt
+                });
                 return Ok(userDto);
             }
             catch (Exception ex)
@@ -151,6 +172,14 @@ namespace Lumina.Api.ASP.Controllers
                 await _userManager.UpdateAsync(user);
 
                 var token = _jwtTokenService.CreateToken(user);
+                // Set JWT as HttpOnly cookie
+                Response.Cookies.Append("access_token", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // Set to true in production
+                    SameSite = SameSiteMode.Strict, // Or Lax, depending on your needs
+                    Expires = DateTimeOffset.UtcNow.AddMinutes(60) // Match your token expiry
+                });
                 var userDto = new UserDto
                 {
                     Id = user.Id,
@@ -158,9 +187,18 @@ namespace Lumina.Api.ASP.Controllers
                     UserName = user.UserName,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    Token = token
+                    Token = token  //TODO: Change token return in response header
                 };
 
+
+                var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user);
+                Response.Cookies.Append("refresh_token", refreshToken.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = refreshToken.ExpiresAt
+                });
                 return Ok(userDto);
             }
             catch (Exception ex)
@@ -169,6 +207,33 @@ namespace Lumina.Api.ASP.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new ErrorResponse { Message = "An unexpected error occurred while logging in" });
             }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            var refreshTokenValue = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refreshTokenValue))
+                return Unauthorized(new ErrorResponse { Message = "No refresh token provided" });
+
+            var tokenEntity = await _refreshTokenService.GetValidRefreshTokenAsync(refreshTokenValue);
+            if (tokenEntity == null)
+                return Unauthorized(new ErrorResponse { Message = "Invalid or expired refresh token" });
+
+            await _refreshTokenService.InvalidateRefreshTokenAsync(tokenEntity);
+
+            var newJwt = _jwtTokenService.CreateToken(tokenEntity.User);
+            var newRefreshToken = await _refreshTokenService.CreateRefreshTokenAsync(tokenEntity.User);
+
+            Response.Cookies.Append("refresh_token", newRefreshToken.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = newRefreshToken.ExpiresAt
+            });
+
+            return Ok(new { token = newJwt });
         }
     }
 }
