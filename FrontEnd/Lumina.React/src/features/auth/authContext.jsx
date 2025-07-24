@@ -14,23 +14,20 @@ export const AuthProvider = ({ children }) => {
   // Initialize auth state on app load
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = sessionStorage.getItem('token');
-      const refreshToken = sessionStorage.getItem('refreshToken');
-      
-      if (token) {
-        try {
-          // Validate token with backend
-          const result = await authApi.validateToken();
-          if (result.success) {
-            setUser(result.data);
-          } else {
-            // Token is invalid, clear storage
-            clearAuthState();
-          }
-        } catch (error) {
-          console.error('Token validation failed:', error);
-          clearAuthState();
+      try {
+        // Try to validate the httpOnly cookie and get user data
+        // This will call a protected endpoint that requires the JWT cookie
+        const result = await authApi.validateToken();
+        if (result.success) {
+          setUser(result.data);
+        } else {
+          // No valid session or cookie expired
+          setUser(null);
         }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        // If there's any error (network, 401, etc.), treat as not authenticated
+        setUser(null);
       }
       
       setLoading(false);
@@ -39,9 +36,20 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Listen for logout events from httpClient
+  useEffect(() => {
+    const handleLogout = () => {
+      clearAuthState();
+      navigate('/login');
+    };
+
+    window.addEventListener('auth:logout', handleLogout);
+    return () => window.removeEventListener('auth:logout', handleLogout);
+  }, [navigate]);
+
   const clearAuthState = useCallback(() => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('refreshToken');
+    // No need to clear tokens since they're httpOnly cookies
+    // The server will handle cookie cleanup on logout
     setUser(null);
     setError(null);
   }, []);
@@ -54,16 +62,9 @@ export const AuthProvider = ({ children }) => {
       const result = await authApi.login(credentials);
       
       if (result.success) {
-        const { token, refreshToken, user: userData } = result.data;
-        
-        // Store tokens
-        sessionStorage.setItem('token', token);
-        if (refreshToken) {
-          sessionStorage.setItem('refreshToken', refreshToken);
-        }
-        
-        // Set user state
-        setUser(userData);
+        // HttpOnly cookie is set by the server automatically
+        // Set user data from response
+        setUser(result.data);
         
         // Navigate to dashboard
         navigate('/dashboard');
@@ -90,16 +91,10 @@ export const AuthProvider = ({ children }) => {
       const result = await authApi.register(registrationData);
       
       if (result.success) {
-        // Auto-login after successful registration
-        if (result.data.token) {
-          const { token, refreshToken, user: userData } = result.data;
-          
-          sessionStorage.setItem('token', token);
-          if (refreshToken) {
-            sessionStorage.setItem('refreshToken', refreshToken);
-          }
-          
-          setUser(userData);
+        // HttpOnly cookie is set by the server automatically if auto-login is enabled
+        // Check if user data is returned (auto-login)
+        if (result.data && result.data.id) {
+          setUser(result.data);
           navigate('/dashboard');
         } else {
           // If no auto-login, redirect to login page
@@ -126,7 +121,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      // Call logout API (even if it fails, we still clear local state)
+      // Call logout API to clear httpOnly cookie on server
       await authApi.logout();
       
       // Clear local state
