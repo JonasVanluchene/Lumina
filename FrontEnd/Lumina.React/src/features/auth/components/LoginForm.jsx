@@ -6,7 +6,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: ''
   });
   const [localError, setLocalError] = useState('');
@@ -39,17 +39,20 @@ const LoginForm = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.email || !formData.password) {
+    if (!formData.identifier || !formData.password) {
       setLocalError('Please fill in all fields');
       return;
     }
 
-    if (!formData.email.includes('@')) {
+    if (!formData.identifier.includes('@')) {
       setLocalError('Please enter a valid email address');
       return;
     }
 
-    const result = await login(formData);
+    const result = await login({
+      identifier: formData.identifier, // Ensure backend expects 'email' field
+      password: formData.password
+    });
     
     if (!result.success) {
       setLocalError(result.message);
@@ -94,14 +97,14 @@ const LoginForm = () => {
                 </Alert>
               )}
               
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleSubmit} method='post'>
                 <Form.Group className="mb-3">
                   <Form.Label>Email address</Form.Label>
                   <Form.Control
                     type="email"
-                    name="email"
+                    name="identifier"
                     placeholder="Enter your email"
-                    value={formData.email}
+                    value={formData.identifier}
                     onChange={handleChange}
                     disabled={loading}
                     required

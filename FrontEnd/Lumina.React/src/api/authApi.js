@@ -6,7 +6,7 @@ export const authApi = {
       const response = await httpClient.post('/auth/login', credentials);
       return {
         success: true,
-        data: response.data,
+        data: response.data, // User data from response
         message: 'Login successful'
       };
     } catch (error) {
@@ -23,7 +23,7 @@ export const authApi = {
       const response = await httpClient.post('/auth/register', registrationData);
       return {
         success: true,
-        data: response.data,
+        data: response.data, // User data from response
         message: 'Registration successful'
       };
     } catch (error) {
@@ -44,6 +44,7 @@ export const authApi = {
       };
     } catch (error) {
       // Even if logout fails on server, we should clear local state
+      // The httpOnly cookie will be cleared by the server or expire
       return {
         success: true,
         message: 'Logout completed'
@@ -51,24 +52,26 @@ export const authApi = {
     }
   },
 
-  refreshToken: async () => {
+  // Check authentication status by calling a protected endpoint
+  validateToken: async () => {
     try {
-      const response = await httpClient.post('/auth/refresh');
+      // Use the getCurrentUser method to validate - if it succeeds, user is authenticated
+      const response = await httpClient.get('/user/me');
       return {
         success: true,
-        data: response.data
+        data: response.data // Should return user data
       };
     } catch (error) {
       return {
         success: false,
-        message: 'Token refresh failed'
+        message: 'Authentication failed'
       };
     }
   },
 
-  validateToken: async () => {
+  getCurrentUser: async () => {
     try {
-      const response = await httpClient.get('/auth/validate');
+      const response = await httpClient.get('/user/me'); // or whatever endpoint returns current user
       return {
         success: true,
         data: response.data
@@ -76,7 +79,7 @@ export const authApi = {
     } catch (error) {
       return {
         success: false,
-        message: 'Token validation failed'
+        message: 'Failed to get user data'
       };
     }
   }
